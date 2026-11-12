@@ -25,7 +25,7 @@ import { createCow, createPlane, createScoops, visitorsMayLoad, type Head } from
 import { CENTRE } from './meadow';
 import { bell, chime, pop, setSound, soundOn, onSound } from './audio';
 import { initTitle } from './title';
-import { liftLoader } from './loader';
+import { coverAgain, liftLoader } from './loader';
 import { shops } from '../data/site';
 
 const NAVY = 0x0f1e37;
@@ -136,30 +136,32 @@ export function initNest() {
   }
 
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // the doll loader stays up until the dolls are in, or the page falls back to its still lineup
+  // The loader stays up until the dolls are in. The still lineup in the HTML is for search engines
+  // and screen readers only: no visitor ever sees it, so nothing below falls back to it. Reduced
+  // motion gets the live page too, with its visitors and flights already switched off.
   let dollsIn = () => {};
   const lifted = liftLoader(new Promise<void>((r) => (dollsIn = r)));
   const entered = gate(reduce, lifted);
-  if (reduce || !webglOK()) {
-    dollsIn();
-    void entered; // the gate starts the title itself
-    return; // the static lineup with captions is the designed fallback
-  }
+  if (!webglOK()) return; // nothing can draw the page: the loader stays
 
   const items = [...page.querySelectorAll<HTMLElement>('[data-doll]')];
   page.classList.add('has-gl');
+  // A failed load or a GPU reset covers the page with the loader again and starts it over. Two
+  // tries a session, so a device that can never draw it keeps the loader instead of looping.
   const fail = () => {
-    page.classList.remove('has-gl', 'is-gl');
-    dollsIn();
+    coverAgain();
+    const tries = Number(sessionStorage.getItem('nest-retry') ?? 0);
+    if (tries < 2) {
+      sessionStorage.setItem('nest-retry', String(tries + 1));
+      setTimeout(() => location.reload(), 600);
+    }
   };
 
   // the cloud print renders through its own multisampled target, so the canvas needs none of its own
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: pageSet() !== 'dither', alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  // a GPU that resets (a backgrounded phone, a driver hiccup) drops back to the still lineup,
-  // and gets the live page back once it returns
+  // a GPU that resets (a backgrounded phone, a driver hiccup) goes back under the loader and reloads
   canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); fail(); });
-  canvas.addEventListener('webglcontextrestored', () => location.reload());
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(26, 1, 0.5, 1400);
@@ -696,6 +698,7 @@ export function initNest() {
         });
       } });
       dollsIn();
+      sessionStorage.removeItem('nest-retry'); // it drew: a later failure gets its tries again
       void entered.then(() => intro.play());
       intro.add(() => {
         page!.classList.add('is-gl');

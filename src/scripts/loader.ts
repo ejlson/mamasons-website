@@ -1,9 +1,9 @@
-// Lifts the scoop loader (src/components/ScoopLoader.astro) once `ready` settles. It stays up at
-// least until the first scoop has landed, so a warm cache never flashes it for a frame. A load
-// that never reports back still lets the page through after MAX_MS. Resolves as the fade starts,
-// so the page's own entrance plays out underneath it.
+// Lifts the scoop loader (src/components/ScoopLoader.astro) once `ready` resolves. It stays up at
+// least until the first scoop has landed, so a warm cache never flashes it for a frame. There is
+// no time limit: the still lineup underneath is never shown, so a slow or failed load keeps the
+// loader up rather than uncovering it. Resolves as the fade starts, so the page's own entrance
+// plays out underneath it.
 const MIN_MS = 1200; // the first scoop lands at 0.85 s and settles by 1.15 s (scoops.css)
-const MAX_MS = 12000;
 const FADE_MS = 900; // the drawing thins first, the cream follows (ScoopLoader's transition)
 
 // Calm beats in the 6 s scoop loop, in ms: a scoop has just settled and nothing is in the air
@@ -33,15 +33,20 @@ export function liftLoader(ready: Promise<unknown>): Promise<void> {
   if (!el) return ready.then(() => undefined, () => undefined);
   const shown = performance.now();
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const settled = Promise.race([
-    ready.catch(() => undefined),
-    new Promise((r) => setTimeout(r, MAX_MS)),
-  ]);
-  return settled
+  return ready
     .then(() => new Promise((r) => setTimeout(r, Math.max(0, MIN_MS - (performance.now() - shown)))))
     .then(() => (reduce ? undefined : untilCalm(el)))
     .then(() => {
       el.classList.add('is-done');
       setTimeout(() => { el.hidden = true; }, reduce ? 0 : FADE_MS);
     });
+}
+
+/** Puts the loader back over the page at once, for a page that has to start again underneath. */
+export function coverAgain() {
+  const el = document.querySelector<HTMLElement>('[data-loader]');
+  if (!el) return;
+  el.style.transition = 'none';
+  el.hidden = false;
+  el.classList.remove('is-done');
 }
