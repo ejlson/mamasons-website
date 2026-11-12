@@ -1,0 +1,12 @@
+# Cloudflare cache rules for the built site (Workers static assets and Pages both read this file).
+# Astro's scripts and styles carry a content hash in their names, so they never change in place.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts, models and pictures keep their names when replaced: cache a day, then refresh quietly.
+/fonts/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/models/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/img/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

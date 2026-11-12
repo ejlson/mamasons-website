@@ -26,12 +26,20 @@ export function inked(geo: THREE.BufferGeometry, color: number | THREE.Material,
 // the models actually in public/models/: add a name here when its file goes in
 const READY = ['cow', 'ufo', 'seagull', 'ube-cloud'];
 
+// The visitors' models (about 1 MB together) hold off until the dolls' entrance has played, so
+// they never compete with it for a phone's bandwidth. The first visitor is due 32 s in at the
+// earliest, so nothing waits on them; the timer lets them through if the entrance never finishes.
+let letIn = () => {};
+const entranceDone = new Promise<void>((r) => { letIn = r; setTimeout(r, 15000); });
+export const visitorsMayLoad = () => letIn();
+
 /**
  * Loads public/models/<name>.glb, scaled to `size` across and centred; size 0 keeps the model's own
  * units and origin. Every clip in the file is on holder.userData.clips; `clip` also starts one playing.
  */
 export async function loadModel(name: string, size: number, clip?: string, tone = 1) {
   if (!READY.includes(name)) return null;
+  await entranceDone;
   const gltf = await new GLTFLoader().loadAsync(`/models/${name}.glb`).catch(() => null);
   if (!gltf) return null;
   const model = gltf.scene;

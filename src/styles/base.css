@@ -1,12 +1,11 @@
 /* Brand pack tokens, fonts and the one-screen frame shared by every direction. */
 
-@font-face { font-family: 'Mamasons Display'; src: url('/fonts/montserrat-900-normal.woff2') format('woff2'); font-weight: 900; font-display: swap; }
-@font-face { font-family: 'Mamasons Display'; src: url('/fonts/montserrat-800-normal.woff2') format('woff2'); font-weight: 800; font-display: swap; }
-@font-face { font-family: 'Mamasons Text'; src: url('/fonts/montserrat-500-normal.woff2') format('woff2'); font-weight: 500; font-display: swap; }
-@font-face { font-family: 'Mamasons Text'; src: url('/fonts/montserrat-700-normal.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+/* Montserrat and Oswald are variable fonts: one file each covers every weight the page uses,
+   so the browser downloads each once rather than once per weight */
+@font-face { font-family: 'Mamasons Display'; src: url('/fonts/montserrat-variable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: 'Mamasons Text'; src: url('/fonts/montserrat-variable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: 'Mamasons Script'; src: url('/fonts/yellowtail-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'Mamasons Caps'; src: url('/fonts/oswald-500-normal.woff2') format('woff2'); font-weight: 500; font-display: swap; }
-@font-face { font-family: 'Mamasons Caps'; src: url('/fonts/oswald-600-normal.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+@font-face { font-family: 'Mamasons Caps'; src: url('/fonts/oswald-variable.woff2') format('woff2'); font-weight: 400 700; font-display: swap; }
 
 :root {
   /* brand pack */

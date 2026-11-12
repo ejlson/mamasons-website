@@ -1,6 +1,6 @@
 ---
 import '../styles/base.css';
-import { brand, shops } from '../data/site';
+import { brand, shops, social } from '../data/site';
 
 interface Props {
   title: string;
@@ -11,14 +11,23 @@ interface Props {
 }
 const { title, description, theme, path, preload = [] } = Astro.props;
 const canonical = new URL(path, brand.url).toString();
+const ogImage = new URL('/og.jpg', brand.url).toString();
+// what search engines and maps read: the business, and each shop as an ice cream shop of its own.
+// Postcodes, opening hours and phone numbers go in once the owner confirms them (src/data/site.ts).
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: `${brand.name} ${brand.line}`,
   url: brand.url,
+  logo: new URL('/apple-touch-icon.png', brand.url).toString(),
+  image: ogImage,
+  sameAs: [social.instagram.href],
   department: shops.map((s) => ({
     '@type': 'IceCreamShop',
     name: `${brand.name} ${s.area}`,
+    url: brand.url,
+    image: ogImage,
+    servesCuisine: 'Filipino',
     address: { '@type': 'PostalAddress', streetAddress: s.street, addressLocality: s.city, addressCountry: 'GB' },
   })),
 };
@@ -35,10 +44,19 @@ const jsonLd = {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL('/og.png', brand.url).toString()} />
+    <meta property="og:site_name" content={`${brand.name} ${brand.line}`} />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Four Mamasons dolls floating in a blue sky under the Mamasons Dirty Ice Cream logo" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preload" href="/fonts/montserrat-900-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" href="/fonts/montserrat-variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/yellowtail-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     {preload.map((href) => <link rel="preload" href={href} as="image" />)}
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

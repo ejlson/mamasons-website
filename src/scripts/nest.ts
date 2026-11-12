@@ -21,7 +21,7 @@ import { createUfo } from './ufo';
 import { createUbeCloud } from './ubecloud';
 import { createCapizSet, createDitherSet, createSunSet } from './sets';
 import { createBird } from './bird';
-import { createCow, createPlane, createScoops, type Head } from './props';
+import { createCow, createPlane, createScoops, visitorsMayLoad, type Head } from './props';
 import { CENTRE } from './meadow';
 import { bell, chime, pop, setSound, soundOn, onSound } from './audio';
 import { initTitle } from './title';
@@ -684,6 +684,7 @@ export function initNest() {
       // (it takes 0.9 s), so the sky is never empty between the two
       const intro = gsap.timeline({ paused: true, delay: setName === 'dither' ? 0.1 : 0.5, onComplete: () => {
         introDone = true;
+        visitorsMayLoad(); // the visitors' models wait until the entrance has the network to itself
         startTalking();
         if (setName !== 'dither') gsap.to(float, {
           v: 1, duration: 2.4, ease: 'sine.inOut',
