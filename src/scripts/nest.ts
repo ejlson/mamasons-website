@@ -659,7 +659,13 @@ export function initNest() {
         slow = 0;
         settleUntil = now + 2500;
       };
+      // GSAP runs a frame at once when its ticker wakes (ticker.wake calls _tick), and it has
+      // usually dozed off by the time a slow dolls.glb arrives. The first timeline below would
+      // then draw a frame mid-setup, before `flight` exists, and stop the page. So frames wait
+      // until everything in this callback is built.
+      let built = false;
       gsap.ticker.add(() => {
+        if (!built) return;
         const t = performance.now() / 1000;
         adapt(t * 1000);
         pointer.x += (pointer.tx - pointer.x) * 0.06;
@@ -1718,6 +1724,7 @@ export function initNest() {
           });
         });
       }
+      built = true;
     },
     undefined,
     (e) => { console.error('nest: the dolls could not be set up', e); fail(); },
