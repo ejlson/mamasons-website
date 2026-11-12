@@ -1,0 +1,911 @@
+---
+import Base from '../layouts/Base.astro';
+import ScoopLoader from '../components/ScoopLoader.astro';
+import { brand, shops, social } from '../data/site';
+import fs from 'node:fs';
+// the time-of-day sky, inlined so the colours are set before the first paint
+import skyScript from '../scripts/sky.js?raw';
+
+// a generated backdrop dropped into public/backdrop/ is picked up at build time
+const backdrop = fs.existsSync('public/backdrop/meadow-strip.jpg')
+  ? 'strip:/backdrop/meadow-strip.jpg'
+  : fs.existsSync('public/backdrop/meadow-360.jpg')
+  ? '360:/backdrop/meadow-360.jpg'
+  : fs.existsSync('public/backdrop/meadow.jpg') ? 'still:/backdrop/meadow.jpg' : '';
+
+// The four dolls in the scene, largest first, and the line each one says when tapped.
+// The same lines are the static captions when there is no WebGL or motion is reduced.
+const dolls = [
+  { name: 'Mama', line: 'Yes? Mama is busy nesting a website.' },
+  { name: 'Lila', line: `Kentish Town: ${shops[0].street}.` },
+  { name: 'Minty', line: `Chinatown: ${shops[1].street}.` },
+  { name: 'Bunso', line: 'Ice cream in a toasted bun. Bilog!' },
+];
+// the brand pack's multicoloured wordmark: one pastel per letter
+const letterTints = ['#FAD7E1', '#BEDCB6', '#CDE9F3', '#BA93C4', '#F6E3A6', '#FAD7E1', '#BEDCB6', '#CDE9F3'];
+const word = brand.name.toUpperCase().split('');
+---
+<Base
+  title="Mamasons Dirty Ice Cream · Kentish Town & Chinatown"
+  description="Filipino dirty ice cream in Kentish Town and Chinatown, London. Our new website is still nesting; both shops are open."
+  theme="#1450C2"
+  path="/"
+  preload={['/img/doll-1-560.webp']}
+>
+  <main id="main" class="screen nest" data-nest data-backdrop={backdrop}>
+    <script is:inline set:html={skyScript}></script>
+    <canvas class="gl" data-gl aria-hidden="true"></canvas>
+    <!-- Safari can't read a colour from the canvas or a gradient, so it tints its bars from the
+         plain fixed strips at the page's top and bottom edges: sky above, paper below -->
+    <div class="edge edge-top" aria-hidden="true"></div>
+    <div class="edge edge-bottom" aria-hidden="true"></div>
+    <!-- layouts: E (Pedestal) by default; /nest?ui=a … d for the other trials -->
+    <script is:inline>
+      (function () {
+        var q = new URLSearchParams(location.search);
+        var ui = q.get('ui') || 'e';
+        // the sky is the page; ?set=classic or ?world=valley still reach the older scenes
+        var set = q.get('world') === 'valley' || q.get('set') === 'classic' ? null : q.get('set') || 'dither';
+        var main = document.currentScript.parentElement;
+        if (set === 'capiz' || set === 'sun' || set === 'dither') { main.dataset.set = set; ui = set === 'dither' ? 'b' : 'a'; }
+        if (set === 'dither') main.dataset.layout = new URLSearchParams(location.search).get('layout') || '1';
+        if (set === 'dither') main.dataset.bubble = new URLSearchParams(location.search).get('bubble') || 'label';
+        if (ui && /^[a-e]$/.test(ui)) main.dataset.ui = ui;
+      })();
+    </script>
+
+    <p class="drag-hint glass" data-drag-hint data-glass aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5v-2a1.5 1.5 0 0 1 3 0V12M14 10.5a1.5 1.5 0 0 1 3 0V12M17 11.5a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-2a6 6 0 0 1-5-2.7L4.3 15a1.5 1.5 0 0 1 2.4-1.8L8 15"/></svg>
+      <span class="drag-word">Drag to look around</span>
+    </p>
+    <nav class="topbar" aria-label="Sound, time of day, social and jobs">
+      <button class="glass round sound" type="button" data-sound aria-pressed="false" data-glass data-tip="Play sound" hidden>
+        <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="sr-only" data-sound-label>Turn sound on</span>
+      </button>
+      <!-- the time of day: shows the sky's phase, and each tap moves it on (scripts/sky.js) -->
+      <button class="glass round sky-toggle" type="button" data-sky-toggle data-phase="day" data-glass data-tip="Time of day" aria-label="Time of day: Day. Change">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <g class="ph ph-day"><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" /></g>
+          <g class="ph ph-sunrise"><path d="M7 17a5 5 0 0 1 10 0M2.5 17h19M5 20.5h14M12 3v6M9 6l3-3 3 3M4.2 11.2l1.4 1.4M19.8 11.2l-1.4 1.4" /></g>
+          <g class="ph ph-sunset"><path d="M7 17a5 5 0 0 1 10 0M2.5 17h19M5 20.5h14M12 3v6M9 6l3 3 3-3M4.2 11.2l1.4 1.4M19.8 11.2l-1.4 1.4" /></g>
+          <g class="ph ph-night"><path d="M19.5 14.5A7.5 7.5 0 0 1 9.5 4.5a7.5 7.5 0 1 0 10 10z" /><path d="M17 3.5v3M15.5 5h3" /></g>
+        </svg>
+      </button>
+      <a class="glass round ig" data-glass data-tip="Instagram" href={social.instagram.href} rel="noopener" aria-label={`${brand.name} on Instagram`}>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <rect x="3" y="3" width="18" height="18" rx="5.2" />
+          <circle cx="12" cy="12" r="4.2" />
+          <circle cx="17.4" cy="6.6" r="0.6" fill="currentColor" stroke="none" />
+        </svg>
+      </a>
+      <a class="glass round jobs" data-glass data-tip="Jobs" href={social.careers.href} rel="noopener" aria-label={`Jobs at ${brand.name}: careers with the Maginhawa Group`}>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10" cy="8" r="3.6" />
+          <path d="M3.5 20.5a6.5 6.5 0 0 1 13 0M19 7.5v6M16 10.5h6" />
+        </svg>
+      </a>
+    </nav>
+
+    <div class="stage" data-stage>
+      <ol class="dolls" data-dolls aria-label="The dolls, and what they are saying">
+        {dolls.map((d, i) => (
+          <li class="doll" data-doll={i}>
+            <button class="doll-hit" type="button" data-hit={i} aria-describedby={`say-${i}`}>
+              <img class="doll-img" src={`/img/doll-${i + 1}-560.webp`} alt="" width="347" height="560" decoding="async" />
+              <span class="sr-only">{d.name}</span>
+            </button>
+            <p class="bubble glass" id={`say-${i}`} data-bubble={i} data-glass="0.7">{d.line}</p>
+            {(
+              <span class="think" data-think={i} aria-hidden="true">
+                <svg class="halo" viewBox="0 0 60 90" width="60" height="90">
+                  <g stroke="#182848" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+                    <path d="M12 24 L18 82 Q30 88 42 82 L48 24 Z" fill="#fffaf3" />
+                    <path d="M15 56 L18 82 Q30 88 42 82 L45 56 Q30 62 15 56 Z" fill="#ba93c4" stroke-width="0" />
+                    <path d="M14 42 Q30 48 46 42 L45 56 Q30 62 15 56 Z" fill="#e4567a" stroke-width="0" />
+                    <path d="M13 32 Q30 38 47 32 L46 42 Q30 48 14 42 Z" fill="#bedcb6" stroke-width="0" />
+                    <path d="M12 24 L18 82 Q30 88 42 82 L48 24" fill="none" />
+                    <path d="M9 25 C8 12 22 8 30 14 C40 6 53 13 51 25 Z" fill="#cde9f3" />
+                    <circle cx="30" cy="9" r="8" fill="#ba93c4" />
+                    <rect x="23" y="20" width="14" height="8" rx="2" fill="#f6e3a6" />
+                    <path d="M46 2 L39 22" fill="none" />
+                  </g>
+                </svg>
+                <svg class="ube" viewBox="0 0 60 90" width="60" height="90">
+                  <g stroke="#182848" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+                    <path d="M14 42 L30 86 L46 42 Z" fill="#e9b872" />
+                    <path d="M20 58 L39 44 M25 70 L43 52 M17 49 L33 86 M43 49 L28 84" fill="none" stroke-width="1.6" />
+                    {i === 2 && <circle cx="30" cy="16" r="13" fill="#f6e3a6" />}
+                    <path d="M9 42 C2 22 20 12 30 18 C42 12 58 22 51 42 C45 48 40 41 35 46 C30 50 25 41 19 46 C15 48 11 46 9 42 Z" fill="#ba93c4" />
+                    <path d="M18 27 C21 22 26 21 29 22" fill="none" stroke="#efe0f4" />
+                    {i === 3 && <circle cx="31" cy="11" r="4.5" fill="#e4567a" />}
+                  </g>
+                </svg>
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <header class="title">
+      <p class="script tagline" aria-hidden="true" data-tagline>{brand.line}</p>
+      <h1 class="sr-only">{brand.name} {brand.line}</h1>
+      <p class="wordmark" aria-hidden="true" data-wordmark>
+        {word.map((ch, i) => <span class="ch" style={`--fill:${letterTints[i % letterTints.length]}`}>{ch}</span>)}
+      </p>
+    </header>
+
+    <footer class="dock glass" data-glass="0.8">
+      <ul class="shops">
+        {shops.map((s) => (
+          <li>
+            <a class="shop-link" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${brand.name} ${brand.line}, ${s.street}, ${s.city}`)}`} data-place={`${s.street}, ${s.city}`} target="_blank" rel="noopener" aria-label={`${s.area}, ${s.street}: open in maps`}>
+              <span class="caps area">{s.area}</span>
+              <span class="street">{s.street}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </footer>
+    <script is:inline>
+      // Apple devices open Apple Maps; everything else keeps the Google Maps link
+      if (/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.querySelectorAll('.shop-link').forEach(function (a) {
+          a.href = 'https://maps.apple.com/?q=' + encodeURIComponent('Mamasons Dirty Ice Cream') + '&address=' + encodeURIComponent(a.dataset.place);
+        });
+      }
+    </script>
+
+    <!-- the scoop loader: up from the first paint until the dolls are in (src/scripts/loader.ts) -->
+    <ScoopLoader />
+
+    <!-- the entry gate: shown by script only, so without JS nothing is blocked -->
+    <div class="gate" data-gate hidden role="dialog" aria-modal="true" aria-labelledby="gate-title">
+      <div class="gate-inner">
+        <p class="gate-mark" id="gate-title">
+          {word.map((ch, i) => <span class="ch" style={`--fill:${letterTints[i % letterTints.length]}`}>{ch}</span>)}
+        </p>
+        <p class="script gate-line">{brand.line}</p>
+        <p class="gate-note">Our new website is still nesting. Come and meet the family.</p>
+        <button class="enter" type="button" data-enter="sound">
+          <span class="swirl" aria-hidden="true"></span>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" />
+          </svg>
+          <span>Enter with sound</span>
+        </button>
+        <button class="quiet" type="button" data-enter="quiet">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 9.5v5h3.5L12 19V5L7.5 9.5H4z" /><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" />
+          </svg>
+          <span>Enter without sound</span>
+        </button>
+      </div>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .nest {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 'top top' 'stage stage' 'title dock';
+    align-items: end;
+    gap: 0 2rem;
+    padding: var(--gutter);
+    min-height: 100svh;
+    color: var(--navy);
+    /* the no-WebGL sky and meadow */
+    background: linear-gradient(180deg, #5e9be0 0%, #9cc8ee 40%, #e4f1f7 62%, #a9d96a 63%, #4f9a3a 100%);
+  }
+
+  .edge { position: fixed; left: 0; right: 0; height: 2px; z-index: 6; pointer-events: none; }
+  .edge-top { top: 0; background: var(--sky-bar, #1450c2); }
+  .edge-bottom { bottom: 0; background: var(--sky-paper, #f2ead7); }
+  :global(html:has(.nest[data-set='dither'])) { background: var(--sky-bar, #1450c2); }
+  :global(body:has(.nest[data-set='dither'])) { background: transparent; }
+  .gl { position: fixed; inset: 0; width: 100vw; height: 100svh; z-index: 0; pointer-events: none; }
+  .nest.is-gl .gl { pointer-events: auto; cursor: grab; touch-action: none; }
+  .nest.is-gl .gl.is-dragging { cursor: grabbing; }
+  /* layout boxes over the canvas must not swallow the drag */
+  .nest.is-gl .stage { pointer-events: none; }
+
+  /* a quiet hint, gone after the first drag */
+  .drag-hint {
+    grid-area: top;
+    position: relative;
+    z-index: 4;
+    justify-self: start;
+    align-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    font-size: var(--t-s);
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 500ms var(--ease-out), translate 500ms var(--ease-out);
+    pointer-events: none;
+  }
+  .nest.is-gl .drag-hint { opacity: 1; }
+  .nest.is-gl .drag-hint.is-gone { opacity: 0; translate: 0 -6px; }
+
+  /* ---- top bar: sound and Instagram, as glass circles */
+  .topbar { grid-area: top; position: relative; z-index: 4; display: flex; justify-content: flex-end; gap: 0.7rem; align-self: start; }
+  .round {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .round[hidden] { display: none; }
+  .round:active { transform: scale(0.94); }
+  /* only the current phase's icon shows; it turns in as it swaps */
+  .sky-toggle .ph { opacity: 0; transform: rotate(-60deg) scale(0.6); transform-origin: 12px 12px; transition: opacity 180ms var(--ease-out), transform 260ms var(--ease-out); }
+  .sky-toggle[data-phase='day'] .ph-day, .sky-toggle[data-phase='sunrise'] .ph-sunrise,
+  .sky-toggle[data-phase='sunset'] .ph-sunset, .sky-toggle[data-phase='night'] .ph-night { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .sky-toggle .ph { transition: none; transform: none; } }
+  /* hover labels: a word of handwriting above each icon, for mouse and keyboard only */
+  .topbar .round { position: relative; }
+  .topbar .round::after {
+    content: attr(data-tip);
+    position: absolute; left: 50%; bottom: calc(100% + 2px);
+    translate: -50% 4px; rotate: -5deg;
+    white-space: nowrap; pointer-events: none;
+    font: 400 22px/1 var(--f-script); color: var(--navy);
+    text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 8px #fff, 0 0 14px #fff;
+    opacity: 0;
+    transition: opacity 160ms var(--ease-out), translate 220ms var(--ease-out);
+  }
+  @media (hover: hover) { .topbar .round:hover::after { opacity: 1; translate: -50% 0; } }
+  .topbar .round:focus-visible::after { opacity: 1; translate: -50% 0; }
+  @media (prefers-reduced-motion: reduce) { .topbar .round::after { transition: opacity 160ms linear; translate: -50% 0; } }
+  .ig svg, .jobs svg { transition: transform var(--dur-ui) var(--ease-out); }
+  @media (hover: hover) { .ig:hover svg { transform: rotate(-8deg) scale(1.08); } .jobs:hover svg { transform: rotate(8deg) scale(1.08); } }
+  .bars { display: flex; align-items: center; gap: 3px; height: 18px; }
+  /* bars are full height and scaled down, so the equaliser animates a transform, not height */
+  .bars i { display: block; width: 3px; height: 18px; border-radius: 2px; background: currentColor; transform: scaleY(var(--s, 0.3)); transition: transform 200ms var(--ease-out); }
+  .bars i:nth-child(2) { --s: 0.56; }
+  .bars i:nth-child(3) { --s: 0.4; }
+  .bars i:nth-child(4) { --s: 0.68; }
+  .sound[aria-pressed='false'] .bars { opacity: 0.55; }
+  .sound[aria-pressed='true'] .bars i { animation: eq 0.9s var(--ease-in-out) infinite alternate; }
+  .sound[aria-pressed='true'] .bars i:nth-child(2) { animation-delay: -0.3s; }
+  .sound[aria-pressed='true'] .bars i:nth-child(3) { animation-delay: -0.6s; }
+  .sound[aria-pressed='true'] .bars i:nth-child(4) { animation-delay: -0.15s; }
+  @keyframes eq { from { transform: scaleY(0.22); } to { transform: scaleY(1); } }
+
+  /* ---- the title, bottom-left over the grass */
+  .title { grid-area: title; position: relative; z-index: 2; display: grid; justify-items: start; }
+  .tagline {
+    /* room for the soft shadow inside the box, so the reveal mask doesn't cut it square */
+    padding: 0.4em 0.5em;
+    margin: -0.4em -0.5em calc(0.1em - 0.4em) calc(0.12em - 0.5em);
+    font-size: clamp(1.7rem, 0.9rem + 2.6vw, 4rem);
+    line-height: 1;
+    color: #fffaf3;
+    text-shadow: 0 2px 18px rgb(74 47 120 / 0.55);
+  }
+  .wordmark, .gate-mark {
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 900;
+    line-height: 0.82;
+    letter-spacing: -0.02em;
+    display: flex;
+    white-space: nowrap;
+  }
+  .wordmark { font-size: clamp(2.9rem, 0.2rem + 7.4vw, 9.4rem); margin-left: -0.04em; }
+  .ch {
+    display: inline-block;
+    color: var(--fill);
+    -webkit-text-stroke: clamp(2px, 0.035em, 7px) var(--navy);
+    paint-order: stroke fill;
+    text-shadow:
+      0.012em 0.012em 0 var(--navy), 0.024em 0.024em 0 var(--navy), 0.036em 0.036em 0 var(--navy),
+      0.048em 0.048em 0 var(--navy), 0.06em 0.06em 0 var(--navy);
+    transform-origin: 50% 100%;
+  }
+
+  .stage { grid-area: stage; position: relative; align-self: stretch; min-height: 0; }
+
+  /* ---- the static lineup: what you see with no WebGL or with reduced motion */
+  .dolls {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(0.6rem, 2vw, 2rem);
+  }
+  .doll { position: relative; display: grid; justify-items: center; }
+  .doll-hit {
+    border: 0;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 40% 40% 30% 30% / 30% 30% 20% 20%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .doll-img { width: auto; height: var(--h); }
+  .doll:nth-child(1) { --h: min(30vh, 38vw); }
+  .doll:nth-child(2) { --h: calc(min(30vh, 38vw) * 0.842); }
+  .doll:nth-child(3) { --h: calc(min(30vh, 38vw) * 0.709); }
+  .doll:nth-child(4) { --h: calc(min(30vh, 38vw) * 0.597); }
+
+  .bubble {
+    position: absolute;
+    bottom: calc(100% + 1rem);
+    left: 50%;
+    width: max-content;
+    max-width: 15rem;
+    margin: 0;
+    padding: 0.7rem 1rem;
+    translate: -50% 0;
+    border-radius: 1.2rem;
+    font-size: var(--t-s);
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+  }
+  /* bubbles stay readable over busy grass: a denser pane than the other glass */
+  .bubble.glass, .bubble.glass.is-liquid { background: rgb(255 252 244 / 0.84); }
+  .bubble.is-laugh { font-family: var(--f-script); font-size: 1.6rem; font-weight: 400; padding: 0.35rem 1rem; }
+
+  .nest.has-gl .doll-img { visibility: hidden; }
+  .nest.has-gl .bubble { opacity: 0; }
+  .nest.is-gl .dolls { position: fixed; inset: 0; display: block; height: auto; pointer-events: none; z-index: 3; }
+  .nest.is-gl .doll { position: absolute; display: block; }
+  .nest.is-gl .doll-hit { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: auto; }
+  .nest.is-gl .bubble {
+    opacity: 0;
+    scale: 0.9;
+    transform-origin: 50% 100%;
+    transition: opacity 180ms var(--ease-out), scale 380ms var(--ease-out);
+    pointer-events: none;
+  }
+  .nest.is-gl .bubble.is-on { opacity: 1; scale: 1; }
+  .doll-hit:focus-visible { outline-offset: 6px; outline-color: #fffaf3; }
+
+  /* ---- the dock: both shops on one glass bar, bottom-right */
+  .dock {
+    grid-area: dock;
+    position: relative;
+    z-index: 4;
+    padding: 0.85rem 1.4rem;
+    border-radius: 1.4rem;
+    align-self: end;
+    margin-bottom: 0.4rem;
+  }
+  .shops { list-style: none; margin: 0; padding: 0; display: flex; gap: clamp(1rem, 2.6vw, 2.2rem); }
+  .shops li { display: grid; line-height: 1.25; }
+  .shop-link { display: grid; color: inherit; text-decoration: none; padding: 0.35rem 0; -webkit-tap-highlight-color: transparent; }
+  .shop-link .street { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; text-decoration-color: transparent; transition: text-decoration-color 160ms ease; }
+  .shop-link:hover .street, .shop-link:focus-visible .street { text-decoration-color: currentColor; }
+  .shop-link:focus-visible { outline: 2px solid var(--navy); outline-offset: 4px; border-radius: 4px; }
+  .area { font-size: 1.05rem; }
+  .street { font-size: var(--t-s); }
+
+  /* ---- the entry gate */
+  .gate {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    padding: var(--gutter);
+    background:
+      radial-gradient(120% 70% at 50% 115%, #c9ee84 0%, transparent 60%),
+      linear-gradient(180deg, #d8ecfa 0%, #f3f9fc 70%, #eaf6dd 100%);
+  }
+  .gate[hidden] { display: none; }
+  .gate-inner { display: grid; justify-items: center; text-align: center; }
+  .gate-mark { font-size: clamp(2.6rem, 1rem + 7vw, 6.4rem); }
+  .gate-line { margin: 0.1em 0 0; font-size: clamp(1.5rem, 1rem + 2vw, 2.8rem); line-height: 1; }
+  .gate-note { margin: 1.2rem 0 2.2rem; max-width: 22rem; font-size: var(--t-s); }
+
+  /* the main button: a glass pill with a slow ube and pink swirl inside it */
+  .enter {
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-height: 54px;
+    padding: 0 1.7rem;
+    border: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    cursor: pointer;
+    color: var(--navy);
+    font-weight: 700;
+    background: rgb(255 252 244 / 0.4);
+    box-shadow:
+      inset 0 1px 0.5px rgb(255 255 255 / 0.9),
+      inset 0 0 0 1px rgb(255 255 255 / 0.5),
+      0 0 0 1.5px rgb(15 30 55 / 0.85),
+      0 16px 36px -14px rgb(91 63 134 / 0.6);
+    transition: transform var(--dur-tap) var(--ease-out), box-shadow var(--dur-ui) var(--ease-out);
+  }
+  .swirl {
+    position: absolute;
+    inset: -60%;
+    z-index: -1;
+    background: conic-gradient(from var(--a, 0deg), #ba93c4, #fad7e1, #cde9f3, #ba93c4, #fad7e1, #ba93c4);
+    filter: blur(14px) saturate(1.2);
+    opacity: 0.75;
+    animation: swirl 7s linear infinite;
+  }
+  @property --a { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+  @keyframes swirl { to { --a: 360deg; } }
+  .enter:active { transform: scale(0.97); }
+  @media (hover: hover) {
+    .enter:hover { transform: translateY(-2px); }
+    .enter:hover .swirl { opacity: 1; animation-duration: 3s; }
+  }
+  .quiet {
+    margin-top: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: var(--navy);
+    font-size: var(--t-s);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1.5px;
+  }
+  @media (hover: hover) { .quiet:hover { text-decoration-thickness: 3px; } }
+
+  @media (max-width: 860px) {
+    .nest {
+      grid-template-columns: 1fr;
+      grid-template-areas: 'top' 'title' 'stage' 'dock';
+      grid-template-rows: auto auto 1fr auto;
+      align-items: start;
+    }
+    .title { justify-items: center; margin-top: 0.6rem; }
+    .wordmark { font-size: 14.4vw; }
+    .tagline { font-size: 8.4vw; margin-left: -0.5em; }
+    .doll:nth-child(1) { --h: min(24vh, 38vw); }
+    .doll:nth-child(2) { --h: calc(min(24vh, 38vw) * 0.842); }
+    .doll:nth-child(3) { --h: calc(min(24vh, 38vw) * 0.709); }
+    .doll:nth-child(4) { --h: calc(min(24vh, 38vw) * 0.597); }
+    .bubble { max-width: 11rem; font-size: 0.8rem; }
+    .dock { width: 100%; }
+    .shops { justify-content: space-between; }
+  }
+
+  .nest:not(.has-gl) .bubble { position: static; translate: none; order: 2; margin-top: 0.9rem; max-width: 10rem; }
+  @media (max-width: 860px) {
+    .nest:not(.has-gl) .dolls { flex-wrap: wrap; align-items: flex-start; gap: 1rem 0.6rem; }
+    .nest:not(.has-gl) .doll { width: calc(50% - 0.6rem); }
+  }
+  /* =================================================================================
+     Layout trials, chosen with ?ui=. Desktop rules only; phones keep the stacked layout
+     except where a trial says otherwise.
+     ================================================================================= */
+  @media (min-width: 861px) {
+    /* B · Marquee: the name across the top like a shop sign, dolls centre stage, the two
+       shops as one pill at the bottom, buttons in the top corners */
+    .nest[data-ui='b'] {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto 1fr auto;
+      grid-template-areas: 'top' 'title' 'stage' 'dock';
+      align-items: start;
+    }
+    .nest[data-ui='b'] .title { justify-items: center; margin-top: -2.6rem; }
+    .nest[data-ui='b'] .wordmark { font-size: clamp(2.6rem, 6.4vw, 7.6rem); }
+    .nest[data-ui='b'] .tagline { order: 2; margin: 0.15em -0.5em -0.4em; font-size: clamp(1.5rem, 2.4vw, 3rem); }
+    .nest[data-ui='b'] .dock { justify-self: center; }
+
+    /* C · Side panel: a cream card down the left holds the name, both shops and the links,
+       the dolls get the rest of the screen */
+    .nest[data-ui='c'] {
+      grid-template-columns: minmax(300px, 30vw) 1fr;
+      grid-template-rows: auto auto auto 1fr;
+      grid-template-areas: 'title stage' 'dock stage' 'top stage' '. stage';
+      align-items: start;
+      gap: 1.6rem 3rem;
+      padding-left: calc(var(--gutter) * 2.2);
+    }
+    .nest[data-ui='c']::before {
+      content: '';
+      position: fixed;
+      z-index: 1;
+      inset: var(--gutter) auto var(--gutter) var(--gutter);
+      width: calc(30vw + var(--gutter) * 1.6);
+      min-width: 340px;
+      border-radius: 2rem;
+      background: rgb(255 250 243 / 0.62);
+      backdrop-filter: blur(18px) saturate(1.2);
+      box-shadow: 0 20px 60px rgb(120 40 70 / 0.18);
+      pointer-events: none;
+    }
+    .nest[data-ui='c'] .title { margin-top: 2.2rem; }
+    .nest[data-ui='c'] .wordmark { font-size: clamp(2.4rem, 4.2vw, 5.2rem); }
+    .nest[data-ui='c'] .tagline { color: var(--navy); text-shadow: none; }
+    .nest[data-ui='c'] .dock { background: none; box-shadow: none; padding: 0; backdrop-filter: none; }
+    .nest[data-ui='c'] .shops { flex-direction: column; align-items: flex-start; gap: 1.1rem; }
+    .nest[data-ui='c'] .topbar { justify-content: flex-start; margin-top: 0.8rem; }
+    .nest[data-ui='c'] .drag-hint { position: fixed; top: var(--gutter); right: var(--gutter); }
+
+    /* D · Nav bar: a compact name top-left, the shops as a pill in the middle of the top bar,
+       buttons top-right; the whole screen below is the dolls */
+    .nest[data-ui='d'] {
+      grid-template-columns: auto 1fr auto;
+      grid-template-rows: auto 1fr;
+      grid-template-areas: 'title dock top' 'stage stage stage';
+      align-items: center;
+    }
+    .nest[data-ui='d'] .title { grid-template-columns: auto auto; align-items: end; gap: 0.6rem; }
+    .nest[data-ui='d'] .wordmark { font-size: clamp(2rem, 3.2vw, 3.4rem); }
+    .nest[data-ui='d'] .tagline { order: 2; font-size: clamp(1.2rem, 1.6vw, 1.8rem); margin-bottom: -0.35em; }
+    .nest[data-ui='d'] .dock { justify-self: center; }
+    .nest[data-ui='d'] .topbar { align-self: center; }
+    .nest[data-ui='d'] .drag-hint { position: fixed; bottom: var(--gutter); left: 50%; translate: -50% 0; }
+
+    /* E · Pedestal: the dolls stand on a huge name, the script slapped on it like a sticker,
+       the shops in a small line beneath */
+    .nest[data-ui='e'] {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto auto;
+      grid-template-areas: 'top' 'stage' 'title' 'dock';
+    }
+    .nest[data-ui='e'] .title { justify-items: center; position: relative; margin-top: -1rem; }
+    .nest[data-ui='e'] .wordmark { font-size: clamp(3rem, 11.5vw, 13rem); }
+    .nest[data-ui='e'] .tagline {
+      position: absolute;
+      z-index: 2;
+      right: 4%;
+      top: -0.55em;
+      rotate: -7deg;
+      font-size: clamp(1.8rem, 3.2vw, 4rem);
+    }
+    .nest[data-ui='e'] .dock { justify-self: center; margin-top: 1rem; }
+  }
+  /* phone versions of the trials */
+  @media (max-width: 860px) {
+    /* B: sign on top, script under it */
+    .nest[data-ui='b'] .tagline { order: 2; margin-top: 0.1em; }
+
+    /* C: everything in one cream sheet along the bottom, dolls fill the top */
+    .nest[data-ui='c'] {
+      grid-template-areas: 'top' 'stage' 'title' 'dock';
+      grid-template-rows: auto 1fr auto auto;
+    }
+    .nest[data-ui='c']::before {
+      content: '';
+      position: fixed;
+      z-index: 1;
+      left: 0; right: 0; bottom: 0;
+      height: 36svh;
+      border-radius: 2rem 2rem 0 0;
+      background: rgb(255 250 243 / 0.7);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 -12px 40px rgb(120 40 70 / 0.15);
+      pointer-events: none;
+    }
+    .nest[data-ui='c'] .title { margin-top: 0; }
+    .nest[data-ui='c'] .wordmark { font-size: 12vw; }
+    .nest[data-ui='c'] .tagline { color: var(--navy); text-shadow: none; }
+    .nest[data-ui='c'] .dock { background: none; box-shadow: none; backdrop-filter: none; position: relative; z-index: 2; }
+
+    /* D: a slim app bar — small name left, buttons right — and the shops pinned below */
+    .nest[data-ui='d'] {
+      grid-template-columns: 1fr auto;
+      grid-template-areas: 'title top' 'stage stage' 'dock dock';
+      grid-template-rows: auto 1fr auto;
+      align-items: center;
+    }
+    .nest[data-ui='d'] .title { justify-items: start; margin-top: 0; }
+    .nest[data-ui='d'] .wordmark { font-size: 9vw; }
+    .nest[data-ui='d'] .tagline { order: 2; font-size: 5vw; margin: 0 -0.5em -0.4em; }
+    .nest[data-ui='d'] .drag-hint { position: fixed; bottom: calc(var(--gutter) + 5.4rem); left: 50%; translate: -50% 0; }
+
+    /* E: dolls on top of the big name, the script stuck above it */
+    .nest[data-ui='e'] { grid-template-areas: 'top' 'stage' 'title' 'dock'; grid-template-rows: auto 1fr auto auto; }
+    .nest[data-ui='e'] .title { justify-items: center; }
+    .nest[data-ui='e'] .tagline { rotate: -5deg; font-size: 8vw; margin: 0 -0.5em -0.25em; }
+    .nest[data-ui='e'] .wordmark { font-size: 13.6vw; }
+  }
+  /* ---- setting trials (?set=capiz, ?set=sun): no glass, no hints, no bubbles, text at the edges */
+  .nest[data-set] { background: #fad7e1; }
+  /* the sky's colours follow the viewer's time of day (scripts/sky.js); these defaults are the day */
+  .nest[data-set='dither'] { background: linear-gradient(180deg, var(--sky-deep, #1450c4) 0%, var(--sky-pale, #2f7ee6) 60%, var(--sky-glow, #92b5e0) 80%, var(--sky-cream, #f4ecd9) 100%); }
+  .nest[data-set='dither'] .doll-hit { touch-action: none; cursor: grab; }
+  .nest[data-set='dither'] .doll-hit:active { cursor: grabbing; }
+  .nest[data-set] .drag-hint, .nest[data-set]:not([data-set='dither']) .bubble { display: none; }
+  .nest[data-set] .glass, .nest[data-set] .glass.is-liquid {
+    background: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    border: 0 !important;
+  }
+  .nest[data-set] .dock { padding: 0; }
+  .nest[data-set='capiz'] .tagline { color: var(--navy); text-shadow: none; }
+
+  .nest[data-set='sun'] {
+    isolation: isolate;
+    background: linear-gradient(180deg, #ffe9df 0%, #ffd9d6 38%, #fbc6d4 72%, #f6b5cb 100%);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 'top' 'stage' 'dock';
+  }
+  .nest[data-set='sun']::before {
+    content: '';
+    position: fixed;
+    z-index: -2;
+    left: 50%;
+    top: 58%;
+    width: min(54vh, 74vw);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff8e6 0 58%, #fff0c4 66%, rgb(255 233 190 / 0) 72%);
+    box-shadow: 0 0 22vh 8vh rgb(255 233 200 / 0.75);
+  }
+  .nest[data-set='sun'] .gl { z-index: 0; }
+  .nest[data-set='sun'] .title {
+    position: fixed;
+    z-index: -1;
+    left: 50%;
+    top: 27%;
+    translate: -50% -50%;
+    justify-items: center;
+  }
+  .nest[data-set='sun'] .wordmark { font-size: min(11.5vw, 24vh); }
+  .nest[data-set='sun'] .tagline { position: absolute; top: -1.45em; left: 50%; translate: -50% 0; margin: 0; white-space: nowrap; color: var(--navy); text-shadow: none; }
+  .nest[data-set='sun'] .shops { justify-content: space-between; width: 100%; }
+  .nest[data-set='sun'] .dock { width: 100%; position: relative; z-index: 2; }
+
+  /* dither: over a busy print, text needs solid ground */
+  .nest[data-set='dither'] .tagline { color: var(--navy); text-shadow: 0 0 2px #f4ecd9, 0 0 10px #f4ecd9, 0 0 18px #f4ecd9; }
+  /* speech bubbles as printed labels: cream stock, the wordmark's navy outline and stepped
+     shadow, a fine dot screen, and a tail that points at whoever is talking */
+  .nest[data-set='dither'] .bubble.glass, .nest[data-set='dither'] .bubble.glass.is-liquid {
+    --stock: #f4ecd9;
+    max-width: 14rem;
+    padding: 0.6rem 0.9rem 0.65rem;
+    border-radius: 0.9rem;
+    color: var(--navy);
+    font-family: var(--f-text);
+    font-weight: 700;
+    line-height: 1.25;
+    background: radial-gradient(circle, rgb(20 80 196 / 0.13) 0.6px, transparent 0.9px) 0 0 / 3.2px 3.2px, var(--stock) !important;
+    border: 2px solid var(--navy) !important;
+    box-shadow: 1px 1px 0 var(--navy), 2px 2px 0 var(--navy), 3px 3px 0 var(--navy), 4px 4px 0 var(--navy) !important;
+  }
+  .nest[data-set='dither'] .bubble::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -0.62rem;
+    width: 0.95rem;
+    height: 0.95rem;
+    translate: -50% 0;
+    rotate: 45deg;
+    background: var(--stock);
+    border: solid var(--navy);
+    border-width: 0 2px 2px 0;
+    box-shadow: 2px 2px 0 var(--navy);
+    border-bottom-right-radius: 0.2rem;
+  }
+  .nest[data-set='dither'] .bubble.is-laugh { padding: 0.25rem 0.8rem 0.3rem; font-family: var(--f-script); font-weight: 400; font-size: 1.5rem; }
+  .nest[data-set='dither'] .bubble { bottom: calc(100% + 1.2rem); }
+  /* the bubble of a doll at the screen edge slides in, its tail stays over her */
+  @media (max-width: 860px) {
+    .nest[data-set='dither'] .bubble.glass { max-width: 10.5rem; font-size: 0.8rem; }
+    .nest[data-set='dither'] .doll:nth-child(1) .bubble { translate: -38% 0; }
+    .nest[data-set='dither'] .doll:nth-child(1) .bubble::after { left: 38%; }
+    .nest[data-set='dither'] .doll:nth-child(3) .bubble { translate: -68% 0; }
+    .nest[data-set='dither'] .doll:nth-child(3) .bubble::after { left: 68%; }
+  }
+
+  /* bubble trials: ?bubble=label (above), cloud, tag or script */
+  .nest[data-bubble='cloud'] .bubble.glass.glass {
+    padding: 0.75rem 1.1rem;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .nest[data-bubble='cloud'] .bubble::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -0.9rem -1.2rem;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M38 88C18 90 6 76 14 62C-2 52 6 28 28 32C28 12 58 6 70 20C82 2 118 2 128 20C144 6 172 14 170 34C196 30 204 58 186 66C196 84 172 96 154 86C140 100 112 98 100 88C88 98 56 100 38 88Z' fill='%23f4ecd9' stroke='%23182848' stroke-width='3' vector-effect='non-scaling-stroke' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    filter: drop-shadow(2px 2px 0 #182848) drop-shadow(1px 1px 0 #182848);
+  }
+  .nest[data-bubble='cloud'] .bubble::after {
+    bottom: -1.5rem;
+    width: 0.8rem;
+    height: 0.8rem;
+    rotate: 0deg;
+    border: 2px solid var(--navy);
+    border-radius: 50%;
+    box-shadow: 0.55rem 0.75rem 0 -0.08rem var(--navy), 0.55rem 0.75rem 0 -0.2rem var(--stock);
+  }
+  .nest[data-bubble='tag'] .bubble.glass.glass {
+    font-family: var(--f-caps);
+    font-weight: 500;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-radius: 0.25rem;
+    rotate: -2deg;
+    padding: 0.5rem 0.8rem;
+  }
+  .nest[data-bubble='tag'] .doll:nth-child(1) .bubble { --stock: #fad7e1; }
+  .nest[data-bubble='tag'] .doll:nth-child(2) .bubble { --stock: #ba93c4; }
+  .nest[data-bubble='tag'] .doll:nth-child(3) .bubble { --stock: #bedcb6; }
+  .nest[data-bubble='tag'] .doll:nth-child(4) .bubble { --stock: #f6e3a6; }
+  .nest[data-bubble='script'] .bubble.glass.glass {
+    max-width: 19rem;
+    padding: 0;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: #fffaf3;
+    font-family: var(--f-script);
+    font-weight: 400;
+    font-size: 2rem;
+    line-height: 1.05;
+    -webkit-text-stroke: 0.14em var(--navy);
+    paint-order: stroke fill;
+  }
+  .nest[data-bubble='script'] .bubble::after { display: none; }
+
+  /* a doll high in the air says her line from under her feet, so it never leaves the screen */
+  .nest[data-set='dither'] .doll.is-flying .bubble { bottom: auto; top: calc(100% + 1.1rem); transform-origin: 50% 0; }
+  .nest[data-set='dither'] .doll.is-flying .bubble::after { bottom: auto; top: -0.62rem; rotate: 225deg; }
+
+  /* bubbles pop out of the doll, sway while they are up, and the words arrive one by one */
+  .nest[data-set='dither'].is-gl .bubble { transition: opacity 160ms var(--ease-out), scale 200ms ease-in; scale: 0.6; }
+  .nest[data-set='dither'].is-gl .bubble.is-on {
+    scale: 1;
+    animation: bubble-pop 520ms cubic-bezier(0.2, 1.5, 0.4, 1) both, bubble-sway 3.2s ease-in-out 520ms infinite alternate;
+  }
+  .nest[data-set='dither'] .bubble .w { display: inline-block; }
+  .nest[data-set='dither'] .bubble.is-on .w {
+    animation: word-in 260ms var(--ease-out) both;
+    animation-delay: calc(var(--i) * 75ms + 90ms);
+  }
+  @keyframes bubble-pop {
+    from { scale: 0.3; rotate: -7deg; opacity: 0; }
+    to { scale: 1; rotate: 0deg; opacity: 1; }
+  }
+  @keyframes bubble-sway { from { rotate: -1.1deg; } to { rotate: 1.1deg; } }
+  @keyframes word-in { from { opacity: 0; transform: translateY(0.45em) scale(0.85); } to { opacity: 1; transform: none; } }
+
+  /* the thought cloud: the same stock and outline, a puffy edge, and two puffs down to the doll */
+  .think { display: none; }
+  .nest[data-set='dither'] .think {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    bottom: calc(100% + 1.5rem);
+    width: 6.4rem;
+    height: 6rem;
+    display: grid;
+    place-items: center;
+    translate: -50% 0;
+    opacity: 0;
+    scale: 0.4;
+    transform-origin: 50% 100%;
+    transition: opacity 240ms var(--ease-out), scale 300ms ease-in;
+    pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 190'%3E%3Cpath d='M46 172C16 176 2 146 16 124C-8 104 2 64 34 66C34 26 84 8 104 34C128 4 176 18 172 62C204 66 208 112 182 126C198 156 168 182 142 168C122 188 72 188 46 172Z' fill='%23f4ecd9' stroke='%23182848' stroke-width='6' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    filter: drop-shadow(2px 2px 0 #182848) drop-shadow(1px 1px 0 #182848);
+  }
+  .nest[data-set='dither'] .think svg { width: 3.05rem; height: auto; }
+  .nest[data-set='dither'] .think svg.halo, .nest[data-set='dither'] .think[data-food='halo'] svg.ube { display: none; }
+  .nest[data-set='dither'] .think[data-food='halo'] svg.halo { display: block; }
+  .nest[data-set='dither'] .think::before, .nest[data-set='dither'] .think::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: #f4ecd9;
+    border: 2px solid #182848;
+  }
+  .nest[data-set='dither'] .think::before { width: 0.85rem; height: 0.85rem; left: 44%; bottom: -0.65rem; }
+  .nest[data-set='dither'] .think::after { width: 0.5rem; height: 0.5rem; left: 52%; bottom: -1.25rem; }
+  .nest[data-set='dither'] .think.is-on {
+    opacity: 1;
+    scale: 1;
+    animation: think-up 620ms cubic-bezier(0.2, 1.4, 0.4, 1) both, think-float 2.6s ease-in-out 620ms infinite alternate;
+  }
+  .nest[data-set='dither'] .think.is-on svg { animation: cone-wiggle 1.5s ease-in-out infinite alternate; }
+  @keyframes think-up { from { scale: 0.3; opacity: 0; } to { scale: 1; opacity: 1; } }
+  @keyframes think-float { from { margin-bottom: 0; } to { margin-bottom: 0.4rem; } }
+  @keyframes cone-wiggle { from { rotate: -5deg; } to { rotate: 5deg; } }
+  @media (max-width: 860px) {
+    .nest[data-set='dither'] .think { width: 4.4rem; height: 4.2rem; bottom: calc(100% + 1rem); }
+    .nest[data-set='dither'] .think svg { width: 2.1rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nest[data-set='dither'] .bubble.is-on, .nest[data-set='dither'] .bubble.is-on .w,
+    .nest[data-set='dither'] .think.is-on, .nest[data-set='dither'] .think.is-on svg { animation: none; }
+  }
+
+  /* a seagull on her head: the bubble goes above the bird, not over it */
+  .nest[data-set='dither'] .doll.has-bird .bubble { bottom: calc(100% + 6.2rem); }
+
+  /* the title is drawn in the scene, behind the clouds: this one only lays it out, and serves
+     screen readers and no-WebGL visitors */
+  .nest[data-set='dither'].has-gl .title { opacity: 0; pointer-events: none; }
+  .nest[data-set='dither'] .round { width: 40px; height: 40px; color: #fff; filter: drop-shadow(0 1px 3px rgb(16 28 70 / 0.55)); }
+  .nest[data-set='dither'] .sound[aria-pressed='false'] .bars { opacity: 1; }
+  /* just the text, in navy, lifted off the cloud by a tight white halo */
+  .nest[data-set='dither'] .dock { position: relative; z-index: 4; }
+  .nest[data-set='dither'] .shops { gap: clamp(2rem, 6vw, 5rem); }
+  .nest[data-set='dither'] .shops li { text-align: center; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 8px #fff, 0 0 14px #fff; }
+
+  /* dither layouts: the dolls keep one fixed place in the sky, only the type moves.
+     1 sign: full-width name, corners below. 2 corners: small name, centre all dolls.
+     3 stack: everything on the centre line, icons out in the bottom corners. */
+  .nest[data-set='dither'] .stage { position: fixed; inset: 15vh var(--gutter) 12vh; }
+  .nest[data-set='dither'] .shops { text-transform: none; }
+
+  .nest[data-layout='1'] .title { margin-top: -0.4rem; }
+  .nest[data-layout='1'] .wordmark { font-size: 14.2vw; }
+  .nest[data-layout='1'] .tagline { font-size: clamp(1.3rem, 2vw, 2.4rem); margin-top: 0.3em; }
+  .nest[data-layout='1'] .dock, .nest[data-layout='2'] .dock { width: 100%; justify-self: stretch; }
+  .nest[data-layout='1'] .shops, .nest[data-layout='2'] .shops { justify-content: space-between; width: 100%; }
+  .nest[data-layout='1'] .shops li:first-child, .nest[data-layout='2'] .shops li:first-child { text-align: left; }
+  .nest[data-layout='1'] .shops li:last-child, .nest[data-layout='2'] .shops li:last-child { text-align: right; }
+  .nest[data-layout='1'] .topbar {
+    position: fixed; z-index: 5; left: 50%; bottom: var(--gutter); translate: -50% 0;
+  }
+  .nest[data-layout='1'] .round, .nest[data-layout='3'] .round { color: var(--navy); filter: none; }
+
+  .nest[data-layout='2'] .title { position: fixed; z-index: 5; left: var(--gutter); top: var(--gutter); margin: 0; justify-items: start; }
+  .nest[data-layout='2'] .wordmark { font-size: clamp(1.7rem, 2.5vw, 2.5rem); }
+  .nest[data-layout='2'] .tagline { font-size: clamp(1.1rem, 1.5vw, 1.5rem); margin: 0 -0.5em -0.4em; padding-left: 0.5em; }
+
+  .nest[data-layout='3'] .topbar {
+    position: fixed; z-index: 5; left: var(--gutter); right: var(--gutter); bottom: var(--gutter);
+    justify-content: space-between; pointer-events: none;
+  }
+  .nest[data-layout='3'] .topbar > * { pointer-events: auto; }
+  .nest[data-layout='3'] .title { margin-top: 0.4rem; }
+  .nest[data-layout='3'] .shops li { text-align: center; }
+  @media (max-width: 860px) {
+    .nest[data-set='dither'] .stage { inset: 25svh var(--gutter) 15svh; }
+    .nest[data-layout='1'] .title { margin-top: 0.8rem; }
+    .nest[data-layout='1'] .wordmark { font-size: 13.6vw; }
+    .nest[data-layout='1'] .topbar { bottom: calc(var(--gutter) + 3.6rem); }
+    .nest[data-layout='3'] .topbar { bottom: calc(var(--gutter) + 3.6rem); }
+    .nest[data-layout='2'] .wordmark { font-size: 7.4vw; }
+    .nest[data-layout='2'] .title { justify-items: start; }
+  }
+  @media (max-width: 860px) {
+    .nest[data-set='capiz'] { grid-template-rows: auto 1fr auto auto; grid-template-areas: 'top' 'stage' 'title' 'dock'; }
+    .nest[data-set='sun'] .wordmark { font-size: 15vw; }
+    .nest[data-set='sun'] .title { top: 24%; }
+    .nest[data-set='sun']::before { top: 46%; }
+  }
+</style>
+
+<script>
+  import { initNest } from '../scripts/nest';
+  import { initGlass } from '../scripts/glass';
+  initGlass();
+  initNest();
+</script>

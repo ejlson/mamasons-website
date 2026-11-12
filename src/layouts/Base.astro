@@ -1,0 +1,50 @@
+---
+import '../styles/base.css';
+import { brand, shops } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  theme: string;
+  path: string;
+  preload?: string[];
+}
+const { title, description, theme, path, preload = [] } = Astro.props;
+const canonical = new URL(path, brand.url).toString();
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: `${brand.name} ${brand.line}`,
+  url: brand.url,
+  department: shops.map((s) => ({
+    '@type': 'IceCreamShop',
+    name: `${brand.name} ${s.area}`,
+    address: { '@type': 'PostalAddress', streetAddress: s.street, addressLocality: s.city, addressCountry: 'GB' },
+  })),
+};
+---
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content={theme} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/og.png', brand.url).toString()} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/montserrat-900-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/yellowtail-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    {preload.map((href) => <link rel="preload" href={href} as="image" />)}
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,16 @@
+/* The password-protected preview of the construction page, as a Worker with static assets:
+   `npm run preview:deploy` builds the Astro site into dist/ and uploads it. The entry is
+   preview-worker.mjs, which checks the PREVIEW_PASSWORD secret on every request first. */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mamasons-preview",
+  "main": "preview-worker.mjs",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    // every request runs the password check first, assets included
+    "run_worker_first": true
+  },
+  "observability": { "enabled": true }
+}
