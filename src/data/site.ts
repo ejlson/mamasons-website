@@ -5,7 +5,7 @@ export const brand = {
   name: 'Mamasons',
   line: 'Dirty Ice Cream',
   group: 'Maginhawa',
-  url: 'https://www.mamasons.co.uk', // placeholder: the real domain
+  url: 'https://mamasonsdirtyicecream.com',
 };
 
 export const shops = [

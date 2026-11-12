@@ -1,7 +1,7 @@
 /* The preview Worker's front door: one shared password, the same shape as BUNSO's.
 
    Every request, the pictures, models and scripts included, meets this check before the
-   asset store is asked (`run_worker_first` in wrangler.jsonc), so nothing on the page can be
+   asset store is asked (`run_worker_first` in wrangler.preview.jsonc), so nothing on the page can be
    reached around the password. Browser basic auth: the visitor types it once and the browser
    keeps it for the session. Any username is accepted; there is one key, not accounts.
 

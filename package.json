@@ -10,7 +10,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "preview:deploy": "astro build && npx wrangler deploy"
+    "preview:deploy": "astro build && npx wrangler deploy -c wrangler.preview.jsonc"
   },
   "dependencies": {
     "astro": "^7.4.2",
