@@ -42,9 +42,8 @@ export const bilog = {
 export const social = {
   instagram: {
     label: 'Instagram',
-    handle: '@mamasonsdirtyicecream', // placeholder: confirm the real handle
-    href: 'https://www.instagram.com/mamasonsdirtyicecream/',
-    placeholder: true,
+    handle: '@mamasons_',
+    href: 'https://www.instagram.com/mamasons_/',
   },
   careers: {
     label: 'Jobs',
