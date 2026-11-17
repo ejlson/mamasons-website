@@ -14,11 +14,15 @@ const canonical = new URL(path, brand.url).toString();
 const ogImage = new URL('/og.jpg', brand.url).toString();
 // what search engines and maps read: the business, and each shop as an ice cream shop of its own.
 // Postcodes, opening hours and phone numbers go in once the owner confirms them (src/data/site.ts).
-const jsonLd = {
-  '@context': 'https://schema.org',
+// The WebSite node gives Google the site name it prints above the result ("Mamasons", not the
+// bare domain); alternateName catches the ways people spell it when they search for us.
+const org = {
   '@type': 'Organization',
+  '@id': `${brand.url}/#org`,
   name: `${brand.name} ${brand.line}`,
+  alternateName: [brand.name, "Mamason's", 'Mama Sons', 'Mamasons Ice Cream'],
   url: brand.url,
+  parentOrganization: { '@type': 'Organization', name: 'Maginhawa Group', url: 'https://www.maginhawagroup.co.uk/' },
   logo: new URL('/apple-touch-icon.png', brand.url).toString(),
   image: ogImage,
   sameAs: [social.instagram.href],
@@ -30,6 +34,13 @@ const jsonLd = {
     servesCuisine: 'Filipino',
     address: { '@type': 'PostalAddress', streetAddress: s.street, addressLocality: s.city, addressCountry: 'GB' },
   })),
+};
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', '@id': `${brand.url}/#site`, name: brand.name, alternateName: `${brand.name} ${brand.line}`, url: `${brand.url}/`, publisher: { '@id': org['@id'] } },
+    org,
+  ],
 };
 ---
 <html lang="en-GB">
